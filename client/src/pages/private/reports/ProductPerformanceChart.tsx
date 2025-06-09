@@ -35,7 +35,7 @@ const ProductPerformanceChart = () => {
       }
 
       fetch(
-        `http://localhost:8000/api/v1/reports/product-performance${params}`,
+        `http://192.168.104.51:3000/api/v1/reports/product-performance${params}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

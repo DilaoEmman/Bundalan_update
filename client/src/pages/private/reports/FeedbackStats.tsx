@@ -7,7 +7,7 @@ const getApiUrl = (path: string) => {
   // Use full URL in dev, relative in prod (adjust as needed for your setup)
   if (import.meta.env.DEV) {
     // Try IPv4 localhost first (avoids ::1/IPv6 issues)
-    return `http://127.0.0.1:8000${path}`;
+    return `http://192.168.104.51:3000${path}`;
   }
   // Production (served via proxy)
   return path;

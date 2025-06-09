@@ -24,7 +24,7 @@ interface FarewellMessage {
   active: boolean;
 }
 
-const API_BASE = "http://localhost:8000/api/v1/farewell-messages";
+const API_BASE = "http://192.168.104.51:3000/api/v1/farewell-messages";
 
 export default function FarewellMessageAdmin() {
   const [messages, setMessages] = useState<FarewellMessage[]>([]);
