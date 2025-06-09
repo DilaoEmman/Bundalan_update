@@ -13,6 +13,8 @@ class Order extends Model
         "customer_id",
         "price",
         "quantity",
+        "cash_received",
+        "change",
     ];
 
     public function items(){

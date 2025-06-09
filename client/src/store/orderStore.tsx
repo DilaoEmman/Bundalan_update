@@ -97,7 +97,7 @@ export default class OrderStore {
   }
 
   // Create
-  createData = async (customerData: any) => {
+  createData = async (orderData: any) => {
       try {
           const postDataProducts =[...this.cartItems].map((e: any)=>{
               return {
@@ -106,9 +106,15 @@ export default class OrderStore {
                   discount: e.discount,
               }
           })
-          console.log("createData", postDataProducts)
+          // Support for cash_received and change
           const formData = new FormData();
-          formData.append("customer_id", customerData.customer?.id);
+          formData.append("customer_id", orderData.customer?.id);
+          if (orderData.cash_received !== undefined) {
+            formData.append("cash_received", orderData.cash_received);
+          }
+          if (orderData.change !== undefined) {
+            formData.append("change", orderData.change);
+          }
           postDataProducts.forEach((item:any, i: number) => {
               Object.keys(item).map((key:any) => {
                   formData.append(`products[${i}][${key}]`, item[key]);
@@ -136,37 +142,37 @@ export default class OrderStore {
   }
 
   // View
-      getData = async (id: number | string) => {
-        try {
-  
-          const response = await fetch(this.BASE_URL + `/${id}`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${this.rootStore.authStore.token}`,
-              'Content-Type': 'application/json', // You can adjust this header as needed
-            }
-          })
-          const data = await response.json();
-          if (data.error) {
-            this.rootStore.handleError(response.status, data.message, data);
-            return Promise.reject(data)
-          } else {
-              const orderItems = data.data.order?.items.map((item:any) => {
-                  return {
-                      product: {
-                          label: item.product_name
-                      }, 
-                      quantity: item.product_quantity,
-                      price: item.product_price,
-                      discount: item.product_discount,
-                      total: this.calculateFinalPrice(item.product_price,item.product_discount, item.product_quantity),
-                  }
-                })
-            this.setCartItems(orderItems);
-            return Promise.resolve(data.data.order)
-          }
-        } catch (error: any) {
-          this.rootStore.handleError(419, "Something went wrong!", error)
+  getData = async (id: number | string) => {
+    try {
+
+      const response = await fetch(this.BASE_URL + `/${id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.rootStore.authStore.token}`,
+          'Content-Type': 'application/json', // You can adjust this header as needed
         }
+      })
+      const data = await response.json();
+      if (data.error) {
+        this.rootStore.handleError(response.status, data.message, data);
+        return Promise.reject(data)
+      } else {
+          const orderItems = data.data.order?.items.map((item:any) => {
+              return {
+                  product: {
+                      label: item.product_name
+                  }, 
+                  quantity: item.product_quantity,
+                  price: item.product_price,
+                  discount: item.product_discount,
+                  total: this.calculateFinalPrice(item.product_price,item.product_discount, item.product_quantity),
+              }
+            })
+        this.setCartItems(orderItems);
+        return Promise.resolve(data.data.order)
       }
+    } catch (error: any) {
+      this.rootStore.handleError(419, "Something went wrong!", error)
+    }
+  }
 }

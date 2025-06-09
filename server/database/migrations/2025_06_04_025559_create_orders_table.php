@@ -11,13 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('orders', function (Blueprint $table) {
-            $table->id();
-            $table->string('order_number')->nullable();
-            $table->unsignedBigInteger('customer_id')->nullable();
-            $table->float('price', 8, 2)->nullable();
-            $table->integer('quantity')->nullable();
-            $table->timestamps();
+        Schema::table('orders', function (Blueprint $table) {
+            $table->decimal('cash_received', 10, 2)->nullable()->after('quantity');
+            $table->decimal('change', 10, 2)->nullable()->after('cash_received');
         });
     }
 
@@ -26,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('orders');
+        Schema::table('orders', function (Blueprint $table) {
+            $table->dropColumn(['cash_received', 'change']);
+        });
     }
 };

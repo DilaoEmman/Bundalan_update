@@ -33,6 +33,8 @@ class OrderController extends Controller
                 'products.*.product_id' => 'required|exists:products,id',
                 'products.*.quantity' => 'required|numeric|min:1',
                 'products.*.discount' => 'required|numeric|min:0|max:100',
+                'cash_received' => 'required|numeric|min:0',
+                'change' => 'required|numeric',
             ]);
 
             if ($validator->fails()) {
@@ -45,6 +47,8 @@ class OrderController extends Controller
                 "customer_id" =>  $postData["customer_id"],
                 "order_number" =>  "POS".uniqid(),
                 "quantity" => 0, // <-- ensure no null quantity
+                "cash_received" => $postData["cash_received"],
+                "change" => $postData["change"],
             ]);
         
             $data['order']->price = 0;

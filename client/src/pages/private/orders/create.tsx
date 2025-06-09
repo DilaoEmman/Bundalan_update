@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Box, Grid, Button } from "@mui/material";
+import { Box, Grid, Button, Table, TableBody, TableRow, TableCell } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../../../store/rootStore";
@@ -10,7 +10,7 @@ import AddNewItemForm from "./addNewItemForm";
 import AllItemsList from "./allItemsList";
 import ServerSideAutoComplete from "../../../components/ui/ServerSideAutocomplete/ServerSideAutoComplete";
 import SurveyModal from "../../../components/survey/SurveyModal";
-import FarewellMessageDisplay from "../../../components/farewell/FarewellMessageDisplay"; // <-- Import the component
+import FarewellMessageDisplay from "../../../components/farewell/FarewellMessageDisplay";
 
 const Create = () => {
   const {
@@ -24,7 +24,19 @@ const Create = () => {
   const [productsErrorMessage, setProductsErrorMessage] = useState<
     string | null
   >(null);
-  const [farewellMessage, setFarewellMessage] = useState<string>(""); // <-- Add state
+  const [farewellMessage, setFarewellMessage] = useState<string>("");
+
+  // CASH RECEIVED & CHANGE STATES
+  const [cashReceived, setCashReceived] = useState<number | "">("");
+  // Calculate order total from orderStore.cartItems
+  const getCartTotal = () => {
+    return orderStore.cartItems.reduce(
+      (sum, item) => sum + (item.total || 0),
+      0
+    );
+  };
+  const total = getCartTotal();
+  const change = typeof cashReceived === "number" ? cashReceived - total : 0;
 
   const validationSchema = Yup.object().shape({
     customer: Yup.object()
@@ -53,8 +65,19 @@ const Create = () => {
   const onSubmit = async (data: any) => {
     try {
       setProductsErrorMessage(null);
-      setFarewellMessage(""); // Reset before creating order
-      const resData = await orderStore.createData(data);
+      setFarewellMessage("");
+      // Validate cash received
+      if (typeof cashReceived !== "number" || cashReceived < total) {
+        setProductsErrorMessage("Cash received is less than the total amount!");
+        return;
+      }
+
+      // Inject cash_received and change to payload
+      const resData = await orderStore.createData({
+        ...data,
+        cash_received: cashReceived,
+        change: change,
+      });
       console.log("Order creation response:", resData);
 
       // Try to extract orderId and farewell message from response
@@ -63,7 +86,7 @@ const Create = () => {
         resData?.data?.id ||
         resData?.data?.orderId ||
         resData?.data?.order_id ||
-        resData?.data?.[0]?.id; // add more as needed
+        resData?.data?.[0]?.id;
 
       // Extract farewell_message if present
       const farewellMsg =
@@ -77,9 +100,10 @@ const Create = () => {
           customer: { id: "", label: "" },
         });
         orderStore.setCartItems([]);
+        setCashReceived(""); 
         setLastOrderId(orderId);
         setShowSurvey(true);
-        setFarewellMessage(farewellMsg); // <-- Set message for display
+        setFarewellMessage(farewellMsg);
       } else {
         setProductsErrorMessage(
           "Order was created but order ID was not found in backend response!"
@@ -95,6 +119,40 @@ const Create = () => {
       setProductsErrorMessage("Please select one products");
     }
   };
+
+  // Table for Cash and Change (below AllItemsList)
+  const renderCashChangeTable = () => (
+    <Table>
+      <TableBody>
+        <TableRow>
+          <TableCell colSpan={5} align="right"><b>Cash Received</b></TableCell>
+          <TableCell>
+            <input
+              type="number"
+              min={total}
+              value={cashReceived}
+              onChange={e => {
+                const v = e.target.value;
+                setCashReceived(v === "" ? "" : Number(v));
+              }}
+              style={{ width: "100px" }}
+              required
+            />
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell colSpan={5} align="right"><b>Change</b></TableCell>
+          <TableCell>
+            <span>
+              {typeof cashReceived === "number" && change >= 0
+                ? change.toFixed(2)
+                : "0.00"}
+            </span>
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  );
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -124,6 +182,8 @@ const Create = () => {
           ""
         )}
         <AllItemsList editMode={true} />
+        {/* Add Cash Received / Change fields here */}
+        {renderCashChangeTable()}
         <Button
           sx={{ mt: 2 }}
           type="submit"
